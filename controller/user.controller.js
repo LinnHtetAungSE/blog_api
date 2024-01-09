@@ -4,6 +4,7 @@ const {
   updateUser,
   deleteUser,
   getUsers,
+  toggleStatus,
 } = require("../services/user.service");
 const jwt = require("jsonwebtoken");
 const {
@@ -28,7 +29,7 @@ const retrieveUsers = async (req, res, next) => {
 
 const signupUser = async (req, res, next) => {
   try {
-    const savedUser = await createUser(req.body);
+    const savedUser = await createUser(req.body.data);
     if (savedUser) {
       return created(res, "Registration Successful", { user: savedUser });
     }
@@ -40,7 +41,7 @@ const signupUser = async (req, res, next) => {
 
 const signinUser = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body.data;
 
     const user = await validateUser(email, password);
 
@@ -56,32 +57,14 @@ const signinUser = async (req, res, next) => {
     next(error);
   }
 };
+
 const modifyUser = async (req, res, next) => {
   try {
-    const userToken = req.headers.usertoken;
-    let decodedToken;
-    try {
-      decodedToken = jwt.verify(userToken, process.env.SECRETKEY);
-      if (
-        decodedToken.user.role !== "ADMIN" &&
-        req.params.id !== decodedToken.user._id
-      ) {
-        return unauthorized(
-          res,
-          "You are not authorized to modify this user",
-          null
-        );
-      }
-    } catch (jwtError) {
-      if (jwtError instanceof jwt.JsonWebTokenError) {
-        return unauthorized(res, "Invalid token:" + jwtError.message, null);
-      }
-      throw jwtError;
-    }
+    console.log(req.body);
     const savedUser = await updateUser(
       req.params.id,
-      decodedToken.user._id,
-      req.body
+      req.body.usertoken.user._id,
+      req.body.data
     );
     if (savedUser) {
       return updated(res, "Update Successful", { user: savedUser });
@@ -94,29 +77,30 @@ const modifyUser = async (req, res, next) => {
 
 const disableUser = async (req, res, next) => {
   try {
-    const userToken = req.headers.usertoken;
-    let decodedToken;
-    try {
-      decodedToken = jwt.verify(userToken, process.env.SECRETKEY);
-      if (
-        decodedToken.user.role !== "ADMIN" &&
-        req.params.id !== decodedToken.user._id
-      ) {
-        return unauthorized(
-          res,
-          "You are not authorized to delete this user",
-          null
-        );
-      }
-    } catch (jwtError) {
-      if (jwtError instanceof jwt.JsonWebTokenError) {
-        return unauthorized(res, "Invalid token:" + jwtError.message);
-      }
-      throw jwtError;
+    const user = req.body.usertoken.user;
+    if (user.role === "ADMIN" && req.params.id === user._id) {
+      return error(res, "Cannot delete yourself", null);
     }
-    const deletedUser = await deleteUser(req.params.id, decodedToken.user._id);
+    const deletedUser = await deleteUser(req.params.id, user._id);
     if (deletedUser) {
       return deleted(res, "Delete Successful", { id: deletedUser._id });
+    }
+    throw itemNotFoundError("User not found");
+  } catch (error) {
+    next(error);
+  }
+};
+
+const changeStatus = async (req, res, next) => {
+  try {
+    const user = req.body.usertoken.user;
+    console.log("User", user);
+    if (user.role === "ADMIN" && req.params.id === user._id) {
+      return error(res, "Cannot change status of yourself", null);
+    }
+    const savedUser = await toggleStatus(req.params.id, user._id);
+    if (savedUser) {
+      return updated(res, "Status change Successful", { id: savedUser._id });
     }
     throw itemNotFoundError("User not found");
   } catch (error) {
@@ -130,4 +114,5 @@ module.exports = {
   signinUser,
   modifyUser,
   disableUser,
+  changeStatus,
 };

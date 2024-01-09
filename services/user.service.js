@@ -10,6 +10,7 @@ const { CastError } = require("mongoose");
 const User = require("../models/user.model");
 const { getBcryptPassword, validatePassword } = require("../utils/Bcrypt");
 const { checkId, getObjectId } = require("./base.service");
+const { userStatus } = require("../constants/enum");
 
 const getUsers = async (isDeleted) => {
   try {
@@ -73,13 +74,19 @@ const createUser = async (inputUser, creatorId) => {
 
 const updateUser = async (id, updaterId, inputUser) => {
   try {
-    const bcryptPassword = await getBcryptPassword(inputUser.password);
     await checkId(id, User, `User with id ${id} not found`);
-    const savedUser = await User.findByIdAndUpdate(id, {
-      ...inputUser,
-      password: bcryptPassword,
-      updater: await getObjectId(updaterId),
-    });
+    const bcryptPassword = await getBcryptPassword(inputUser.password);
+    const savedUser = await User.findByIdAndUpdate(
+      id,
+      {
+        ...inputUser,
+        password: bcryptPassword,
+        updater: await getObjectId(updaterId),
+      },
+      {
+        new: true,
+      }
+    );
     if (!savedUser) {
       return null;
     }
@@ -108,10 +115,14 @@ const updateUser = async (id, updaterId, inputUser) => {
 const deleteUser = async (id, updaterId) => {
   try {
     await checkId(id, User, `User with id ${id} not found`);
-    const deletedUser = await User.findByIdAndUpdate(id, {
-      isDeleted: true,
-      updater: await getObjectId(updaterId),
-    });
+    const deletedUser = await User.findByIdAndUpdate(
+      id,
+      {
+        isDeleted: true,
+        updater: await getObjectId(updaterId),
+      },
+      { new: true }
+    );
     if (!deletedUser) {
       return null;
     }
@@ -129,10 +140,46 @@ const deleteUser = async (id, updaterId) => {
   }
 };
 
+const toggleStatus = async (id, updaterId) => {
+  try {
+    await checkId(id, User, `User with id ${id} not found`);
+    const user = await User.findById(id);
+    console.log("USER", user);
+    const status =
+      user.status === userStatus.ACTIVE
+        ? userStatus.SUSPENDED
+        : userStatus.ACTIVE;
+    const changedUser = await User.findByIdAndUpdate(
+      id,
+      {
+        status: status,
+        updater: await getObjectId(updaterId),
+      },
+      { new: true }
+    );
+    if (!changedUser) {
+      return null;
+    }
+    return changedUser;
+  } catch (error) {
+    console.log("ERROR", error);
+    if (error.name === "INVALID_ID") {
+      throw itemNotFoundError(error.message);
+    }
+    if (error instanceof CastError && error.path === "_id") {
+      throw invalidIdError(
+        `Invalid ID: ${error.value} is not a valid ObjectId`
+      );
+    }
+    throw unprocessableError("Failed to change status user");
+  }
+};
+
 module.exports = {
   getUsers,
   validateUser,
   createUser,
   updateUser,
   deleteUser,
+  toggleStatus,
 };

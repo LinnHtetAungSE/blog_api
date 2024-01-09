@@ -38,7 +38,6 @@ const schemaValidator = (path, useJoiError = true) => {
       };
       return res.status(422).json(useJoiError ? joiError : customError);
     }
-    req.body = value;
     return next();
   };
 };

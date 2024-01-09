@@ -1,35 +1,42 @@
 const jwt = require("jsonwebtoken");
+const { unauthorized } = require("../controller/base.controller");
+const { notAcceptableError } = require("../errors/db.error");
 
-module.exports = function (req, res, next) {
+exports.checkUser = (req, res, next) => {
   try {
     const token = req.headers.usertoken;
-    const decode = jwt.verify(token, process.env.SECRETEKEY);
+    const decode = jwt.verify(token, process.env.SECRETKEY);
     req.body.usertoken = decode;
     next();
   } catch (error) {
+    console.log("ERROR", error.name, error.message);
+    if (error instanceof jwt.JsonWebTokenError) {
+      return unauthorized(res, "Invalid token:" + error.message, null);
+    }
     return res.status(401).json({
       message: "Auth failed",
     });
   }
 };
 
-exports.checkValidUser = (userToken, userId, res) => {
+exports.checkValidUser = (req, res, next) => {
   try {
-    decodedToken = jwt.verify(userToken, process.env.SECRETKEY);
-    if (
-      decodedToken.user.role !== "ADMIN" &&
-      userId !== decodedToken.user._id
-    ) {
-      return unauthorized(
-        res,
-        "You are not authorized to delete this user",
-        null
-      );
+    const user = req.body.usertoken.user;
+    console.log("Middleware", user);
+    if (user.status !== "ACTIVE") {
+      return unauthorized(res, "Your account was suspended", null);
     }
-  } catch (jwtError) {
-    if (jwtError instanceof jwt.JsonWebTokenError) {
-      return unauthorized(res, "Invalid token:" + jwtError.message, null);
+    if (user.role !== "ADMIN" && req.params.id !== user._id) {
+      return unauthorized(res, "You are not authorized to this action", null);
     }
-    throw jwtError;
+    next();
+  } catch (error) {
+    console.log("ERROR", error);
+    if (error instanceof jwt.JsonWebTokenError) {
+      return unauthorized(res, "Invalid token:" + error.message, null);
+    }
+    return res.status(401).json({
+      message: "Auth failed",
+    });
   }
 };
