@@ -44,7 +44,7 @@ exports.retrieved = (res, name, data = null) => {
   if (!data) {
     throw itemNotFoundError(name);
   }
-  return success;
+  return success(res, name, data);
 };
 
 exports.updated = (res, name, data = null) => {

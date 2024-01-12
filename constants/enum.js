@@ -8,7 +8,7 @@ exports.userStatus = {
   SUSPENDED: "SUSPENDED",
 };
 
-exports.postStatus = {
+exports.blogStatus = {
   PENDING: "PENDING",
   REJECTED: "REJECTED",
   APPROVED: "APPROVED",

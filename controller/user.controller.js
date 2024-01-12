@@ -5,6 +5,7 @@ const {
   deleteUser,
   getUsers,
   toggleStatus,
+  getUserById,
 } = require("../services/user.service");
 const jwt = require("jsonwebtoken");
 const {
@@ -16,12 +17,43 @@ const {
   deleted,
   retrieved,
 } = require("./base.controller");
-const { itemNotFoundError, unauthorizedError } = require("../errors/db.error");
 
 const retrieveUsers = async (req, res, next) => {
   try {
-    const users = await getUsers();
+    const {
+      skip,
+      limit,
+      sortBy,
+      order,
+      username,
+      email,
+      phoneNumber,
+      role,
+      status,
+      description,
+    } = req.query;
+    const users = await getUsers(
+      skip,
+      limit,
+      sortBy,
+      order,
+      username,
+      email,
+      phoneNumber,
+      role,
+      status,
+      description
+    );
     return retrieved(res, "Retrieved users successful", { users: users });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const retrieveUserById = async (req, res, next) => {
+  try {
+    const user = await getUserById(req.params.id);
+    return retrieved(res, "User retrieved successful", { user: user });
   } catch (error) {
     next(error);
   }
@@ -42,13 +74,10 @@ const signupUser = async (req, res, next) => {
 const signinUser = async (req, res, next) => {
   try {
     const { email, password } = req.body.data;
-
     const user = await validateUser(email, password);
-
     if (!user) {
-      return unauthorized(res, "Invalid credentials", null);
+      return unauthorized(res, "Wrong credentials", null);
     }
-
     const token = jwt.sign({ user }, process.env.SECRETKEY, {
       expiresIn: "1h",
     });
@@ -60,7 +89,6 @@ const signinUser = async (req, res, next) => {
 
 const modifyUser = async (req, res, next) => {
   try {
-    console.log(req.body);
     const savedUser = await updateUser(
       req.params.id,
       req.body.usertoken.user._id,
@@ -69,7 +97,6 @@ const modifyUser = async (req, res, next) => {
     if (savedUser) {
       return updated(res, "Update Successful", { user: savedUser });
     }
-    throw itemNotFoundError("User not found");
   } catch (error) {
     next(error);
   }
@@ -110,6 +137,7 @@ const changeStatus = async (req, res, next) => {
 
 module.exports = {
   retrieveUsers,
+  retrieveUserById,
   signupUser,
   signinUser,
   modifyUser,
