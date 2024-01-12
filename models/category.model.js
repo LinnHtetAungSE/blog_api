@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
+const { Schema } = require("./base.schema");
 
-const categorySchema = mongoose.Schema(
+const categorySchema = new Schema(
   {
     name: {
       type: String,
@@ -8,12 +9,9 @@ const categorySchema = mongoose.Schema(
       required: true,
       unique: true,
     },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
   },
-  { timestamps: true }
+  "User",
+  undefined
 );
 
 const Category = mongoose.model("Category", categorySchema);

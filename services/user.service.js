@@ -9,22 +9,102 @@ const {
 const { CastError } = require("mongoose");
 const User = require("../models/user.model");
 const { getBcryptPassword, validatePassword } = require("../utils/Bcrypt");
-const { checkId, getObjectId } = require("./base.service");
+const {
+  checkId,
+  getObjectId,
+  addConditionToCriteria,
+  getPaginatedItems,
+} = require("./base.service");
 const { userStatus } = require("../constants/enum");
 
-const getUsers = async (isDeleted) => {
+const getUsers = async (
+  skip,
+  limit,
+  sortBy,
+  order,
+  username,
+  email,
+  phoneNumber,
+  role,
+  status,
+  description
+) => {
   try {
-    const users = await User.find();
+    let criteria = {};
+    criteria = addConditionToCriteria(
+      criteria,
+      "username",
+      username ? { $eq: username } : null
+    );
+
+    criteria = addConditionToCriteria(
+      criteria,
+      "email",
+      email ? { $eq: email } : null
+    );
+
+    criteria = addConditionToCriteria(
+      criteria,
+      "phoneNumber",
+      phoneNumber ? { $eq: phoneNumber } : null
+    );
+
+    criteria = addConditionToCriteria(
+      criteria,
+      "role",
+      role ? { $eq: role } : null
+    );
+
+    criteria = addConditionToCriteria(
+      criteria,
+      "status",
+      status ? { $eq: status } : null
+    );
+
+    criteria = addConditionToCriteria(
+      criteria,
+      "description",
+      description ? { $regex: new RegExp(`.*${description}.*`, "i") } : null
+    );
+
+    const users = await getPaginatedItems(
+      User,
+      skip,
+      limit,
+      sortBy,
+      order,
+      "",
+      criteria
+    );
     return users;
   } catch (error) {
-    throw error;
+    throw unprocessableError("Failed to retrieve users");
+  }
+};
+
+const getUserById = async (id) => {
+  try {
+    await checkId(id, User, `User with id ${id} not found`);
+    const user = await User.findById(id);
+    return user;
+  } catch (error) {
+    console.log(error);
+    if (error instanceof CastError && error.path === "_id") {
+      throw invalidIdError("INVALID_ID");
+    }
+    if (error.name === "INVALID_ID") {
+      throw itemNotFoundError(error.message);
+    }
+    throw unprocessableError("Failed to retrieve user");
   }
 };
 
 const validateUser = async (email, password) => {
   try {
     const user = await User.findOne({ email });
-    console.log("User", user);
+    if (!user) {
+      throw unauthorizedError("Wrong credentials");
+    }
     if (user.status !== "ACTIVE") {
       throw unauthorizedError("Account was suspened");
     }
@@ -34,11 +114,14 @@ const validateUser = async (email, password) => {
     }
     return user;
   } catch (error) {
+    console.log(error);
     if (error.message === "Account was suspened") {
       throw unauthorizedError("Account was suspened");
     }
-    throw unauthorizedError("Wrong credentials");
-    // throw unprocessableError("Failed to create user");
+    if (error.name === "UNAUTHORIZED" || error.status < 500) {
+      throw unauthorizedError("Wrong credentials");
+    }
+    throw unprocessableError("Failed to validate user");
   }
 };
 
@@ -48,12 +131,13 @@ const createUser = async (inputUser, creatorId) => {
     const user = new User({
       ...inputUser,
       password: bcryptPassword,
-      creator: creatorId ? getObjectId(creatorId) : null,
+      creator: creatorId ? await getObjectId(creatorId) : null,
       updater: null,
     });
     const savedUser = await user.save();
     return savedUser;
   } catch (error) {
+    console.log("ERROR", error);
     if (error.name === "ValidationError") {
       throw invalidError("Validation Error: " + error.message);
     }
@@ -67,7 +151,9 @@ const createUser = async (inputUser, creatorId) => {
         `Invalid ID: ${error.value} is not a valid ObjectId`
       );
     }
-
+    if (error.name === "INVALID_ID") {
+      throw invalidIdError(error.message);
+    }
     throw unprocessableError("Failed to create user");
   }
 };
@@ -92,6 +178,7 @@ const updateUser = async (id, updaterId, inputUser) => {
     }
     return savedUser;
   } catch (error) {
+    console.log("Error", error);
     if (error.name && error.name === "ValidationError") {
       throw invalidError("Validation Error: " + error.message);
     }
@@ -108,6 +195,9 @@ const updateUser = async (id, updaterId, inputUser) => {
         `Invalid ID: ${error.value} is not a valid ObjectId`
       );
     }
+    if (error.name === "INVALID_ID") {
+      throw invalidIdError(error.message);
+    }
     throw unprocessableError("Failed to update user");
   }
 };
@@ -123,9 +213,6 @@ const deleteUser = async (id, updaterId) => {
       },
       { new: true }
     );
-    if (!deletedUser) {
-      return null;
-    }
     return deletedUser;
   } catch (error) {
     if (error.name === "INVALID_ID") {
@@ -136,6 +223,9 @@ const deleteUser = async (id, updaterId) => {
         `Invalid ID: ${error.value} is not a valid ObjectId`
       );
     }
+    if (error.name === "INVALID_ID") {
+      throw invalidIdError(error.message);
+    }
     throw unprocessableError("Failed to delete user");
   }
 };
@@ -144,7 +234,6 @@ const toggleStatus = async (id, updaterId) => {
   try {
     await checkId(id, User, `User with id ${id} not found`);
     const user = await User.findById(id);
-    console.log("USER", user);
     const status =
       user.status === userStatus.ACTIVE
         ? userStatus.SUSPENDED
@@ -171,12 +260,16 @@ const toggleStatus = async (id, updaterId) => {
         `Invalid ID: ${error.value} is not a valid ObjectId`
       );
     }
+    if (error.name === "INVALID_ID") {
+      throw invalidIdError(error.message);
+    }
     throw unprocessableError("Failed to change status user");
   }
 };
 
 module.exports = {
   getUsers,
+  getUserById,
   validateUser,
   createUser,
   updateUser,

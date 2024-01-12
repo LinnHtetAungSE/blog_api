@@ -1,7 +1,7 @@
-const router = require("express").Router();
-const { schemaValidator } = require("../middleware/schema.validator");
-const { modifyUser, retrieveUsers } = require("../controller/user.controller");
+const { retrieveUserById } = require("../controller/user.controller");
 
-router.get("/", retrieveUsers);
+const router = require("express").Router();
+
+router.get("/:id", retrieveUserById);
 
 module.exports = router;

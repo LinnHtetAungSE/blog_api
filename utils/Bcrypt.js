@@ -1,5 +1,4 @@
 const bcrypt = require("bcrypt");
-const storeHash = process.env.STOREDHASH;
 const saltRounds = parseInt(process.env.SALT);
 const getBcryptPassword = async (password) => {
   const bcryptPassword = await bcrypt
