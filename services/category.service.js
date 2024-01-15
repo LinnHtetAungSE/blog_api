@@ -3,6 +3,7 @@ const {
   alreadyExistsError,
   invalidIdError,
   unprocessableError,
+  itemNotFoundError,
 } = require("../errors/db.error");
 const Category = require("../models/category.model");
 const { CastError } = require("mongoose");
@@ -15,6 +16,21 @@ const getCategories = async () => {
     return categories;
   } catch (error) {
     throw unprocessableError("Failed to retrieve categories");
+  }
+};
+
+const getCategoryByNames = async (names) => {
+  try {
+    const categories = await Promise.all(
+      names.map(async (name) => {
+        const category = await Category.findOne({ name: name });
+        if (!category) throw itemNotFoundError("Categories not found");
+        return category._id;
+      })
+    );
+    return categories;
+  } catch (error) {
+    throw itemNotFoundError("Categories not found");
   }
 };
 
@@ -104,8 +120,9 @@ const deleteCategory = async (id) => {
 };
 
 module.exports = {
+  getCategories,
+  getCategoryByNames,
   createCategory,
   updateCategory,
-  getCategories,
   deleteCategory,
 };

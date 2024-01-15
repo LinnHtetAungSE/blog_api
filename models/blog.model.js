@@ -1,10 +1,15 @@
 const mongoose = require("mongoose");
 const { Schema } = require("./base.schema");
 const { blogStatus } = require("../constants/enum");
+const { required } = require("joi");
 
 const blogSchema = new Schema(
   {
     title: {
+      type: String,
+      required: true,
+    },
+    mainTitle: {
       type: String,
       required: true,
     },

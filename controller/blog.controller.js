@@ -6,6 +6,8 @@ const {
   getBlogById,
   changeStatus,
 } = require("../services/blog.service");
+
+const { getCategoryByNames } = require("../services/category.service");
 const { created, updated, deleted, retrieved } = require("./base.controller");
 
 const retrieveBlogs = async (req, res, next) => {
@@ -39,7 +41,10 @@ const retrieveBlogById = async (req, res, next) => {
 const addBlog = async (req, res, next) => {
   try {
     const savedBlog = await createBlog(
-      req.body.data,
+      {
+        ...req.body.data,
+        categoryList: await getCategoryByNames(req.body.data.categoryList),
+      },
       req.body.usertoken.user._id
     );
     return created(res, "Blog created successful", { blog: savedBlog });

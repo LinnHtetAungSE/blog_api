@@ -14,7 +14,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: process.env.PORT || 5000,
+    origin: process.env.CLIENT,
     credentials: true,
   })
 );
