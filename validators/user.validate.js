@@ -11,14 +11,10 @@ const user_validate_schema = Joi.object({
   confirm_password: Joi.ref("password"),
   email: Joi.string().email().required(),
   phone_number: Joi.string(),
-  role: Joi.string()
-    .valid(roles.ADMIN, roles.USER)
-    .default(roles.USER)
-    .required(),
+  role: Joi.string().valid(roles.ADMIN, roles.USER).default(roles.USER),
   status: Joi.string()
     .valid(userStatus.ACTIVE, userStatus.SUSPENDED)
-    .default(userStatus.ACTIVE)
-    .required(),
+    .default(userStatus.ACTIVE),
   description: Joi.string(),
 });
 

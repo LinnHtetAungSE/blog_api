@@ -6,6 +6,7 @@ const {
   getUsers,
   toggleStatus,
   getUserById,
+  checkDuplicateUser,
 } = require("../services/user.service");
 const jwt = require("jsonwebtoken");
 const {
@@ -81,7 +82,7 @@ const signinUser = async (req, res, next) => {
     const token = jwt.sign({ user }, process.env.SECRETKEY, {
       expiresIn: "1h",
     });
-    return ok(res, "Signin successful", { token: token });
+    return ok(res, "Signin successful", { token: token, user });
   } catch (error) {
     next(error);
   }
@@ -135,6 +136,17 @@ const changeStatus = async (req, res, next) => {
   }
 };
 
+const isNotDuplicateUser = async (req, res, next) => {
+  try {
+    const user = await checkDuplicateUser(req.body.data.value);
+    return ok(res, "Check duplicate done", {
+      isNotExit: (!user && true) || false,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   retrieveUsers,
   retrieveUserById,
@@ -143,4 +155,5 @@ module.exports = {
   modifyUser,
   disableUser,
   changeStatus,
+  isNotDuplicateUser,
 };

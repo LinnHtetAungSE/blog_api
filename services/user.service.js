@@ -267,6 +267,17 @@ const toggleStatus = async (id, updaterId) => {
   }
 };
 
+const checkDuplicateUser = async (value) => {
+  try {
+    const user = await User.findOne({
+      $or: [{ username: value }, { email: value }],
+    });
+    return user;
+  } catch (error) {
+    throw unprocessableError("Failed check user duplicate");
+  }
+};
+
 module.exports = {
   getUsers,
   getUserById,
@@ -275,4 +286,5 @@ module.exports = {
   updateUser,
   deleteUser,
   toggleStatus,
+  checkDuplicateUser,
 };
