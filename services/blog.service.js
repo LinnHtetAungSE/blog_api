@@ -82,8 +82,21 @@ const getBlogById = async (id) => {
     if (error instanceof CastError && error.path === "_id") {
       throw invalidIdError("INVALID_ID");
     }
-
     throw unprocessableError("Failed to retrieve blog");
+  }
+};
+
+const getBlogsDataCount = async () => {
+  try {
+    const data = {
+      approved: await Blog.countDocuments({ status: "APPROVED" }),
+      pending: await Blog.countDocuments({ status: "PENDING" }),
+      rejected: await Blog.countDocuments({ status: "REJECTED" }),
+      total: await Blog.countDocuments(),
+    };
+    return data;
+  } catch (error) {
+    throw unprocessableError("Fail to retrieve blogs");
   }
 };
 
@@ -211,6 +224,7 @@ const changeStatus = async (id, status, updaterId) => {
 module.exports = {
   getBlogs,
   getBlogById,
+  getBlogsDataCount,
   createBlog,
   updateBlog,
   deleteBlog,

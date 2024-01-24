@@ -3,6 +3,7 @@ const {
   modifyBlog,
   removeBlog,
   modifyBlogStatus,
+  retrieveBlogsDataCount,
 } = require("../controller/blog.controller");
 const {
   checkValidUser,
@@ -12,7 +13,7 @@ const { schemaValidator } = require("../middleware/schema.validator");
 const Blog = require("../models/blog.model");
 
 const router = require("express").Router();
-
+router.get("/count", retrieveBlogsDataCount);
 router.post("/create", schemaValidator("/blog"), addBlog);
 router.patch(
   "/:id",

@@ -5,6 +5,7 @@ const {
   getBlogs,
   getBlogById,
   changeStatus,
+  getBlogsDataCount,
 } = require("../services/blog.service");
 
 const { getCategoryByNames } = require("../services/category.service");
@@ -33,6 +34,15 @@ const retrieveBlogById = async (req, res, next) => {
   try {
     const blog = await getBlogById(req.params.id);
     return retrieved(res, "Blog retrieved successful", { blog: blog });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const retrieveBlogsDataCount = async (req, res, next) => {
+  try {
+    const data = await getBlogsDataCount();
+    return retrieved(res, "Blog data successful", { blogData: data });
   } catch (error) {
     next(error);
   }
@@ -93,6 +103,7 @@ const modifyBlogStatus = async (req, res, next) => {
 module.exports = {
   retrieveBlogs,
   retrieveBlogById,
+  retrieveBlogsDataCount,
   addBlog,
   modifyBlog,
   removeBlog,
