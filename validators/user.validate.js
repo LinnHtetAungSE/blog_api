@@ -5,20 +5,16 @@ const PASSWORD_REGEX = new RegExp(
   "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!.@#$%^&*])(?=.{8,})"
 );
 
-const signup_validate_schema = Joi.object({
+const user_validate_schema = Joi.object({
   username: Joi.string().alphanum().min(3).max(30).required(),
   password: Joi.string().pattern(PASSWORD_REGEX).required(),
   confirm_password: Joi.ref("password"),
   email: Joi.string().email().required(),
   phone_number: Joi.string(),
-  role: Joi.string()
-    .valid(roles.ADMIN, roles.USER)
-    .default(roles.USER)
-    .required(),
+  role: Joi.string().valid(roles.ADMIN, roles.USER).default(roles.USER),
   status: Joi.string()
     .valid(userStatus.ACTIVE, userStatus.SUSPENDED)
-    .default(userStatus.ACTIVE)
-    .required(),
+    .default(userStatus.ACTIVE),
   description: Joi.string(),
 });
 
@@ -27,4 +23,4 @@ const signin_validate_schema = Joi.object({
   password: Joi.string(),
 });
 
-module.exports = { signin_validate_schema, signup_validate_schema };
+module.exports = { signin_validate_schema, user_validate_schema };

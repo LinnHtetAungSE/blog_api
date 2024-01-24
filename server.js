@@ -5,6 +5,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const router = require("./routers/index.routes");
 const errorHandler = require("./middleware/error.handler");
+const { checkToken } = require("./middleware/check.user.auth");
 
 const app = express();
 
@@ -13,12 +14,12 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: process.env.PORT || 5000,
+    origin: process.env.CLIENT,
     credentials: true,
   })
 );
 require("./config/db")();
-app.use("/api/v1", router);
+app.use("/api/v1", checkToken, router);
 app.use(errorHandler.handler);
 
 app.listen(process.env.PORT || 5000, function () {

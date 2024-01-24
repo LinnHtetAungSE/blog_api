@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { invalidIdError } = require("../errors/db.error");
+const { invalidIdError, unauthorizedError } = require("../errors/db.error");
 const { RES_DATE_AGG_FORMAT } = require("../constants/constants");
 
 exports.checkId = async (id, Model, key) => {
@@ -55,4 +55,38 @@ exports.filterById = (pipelineStages, obj) => {
   for (key in filters) {
     pipelineStages.push({ $match: { [key]: filters[key] } });
   }
+};
+
+exports.addConditionToCriteria = (criteria, key, value) => {
+  if (value) {
+    return { ...criteria, [key]: value };
+  }
+  return criteria;
+};
+
+exports.getPaginatedItems = async (
+  Model,
+  skip = 1,
+  limit = 6,
+  sortBy = "createdAt",
+  order = "-1",
+  populate,
+  criteria
+) => {
+  let query = {};
+  if (criteria) {
+    query = {
+      $and: [criteria],
+    };
+  }
+
+  const items = {
+    content: await Model.find(query)
+      .sort({ [sortBy]: parseInt(order) })
+      .skip((parseInt(skip) - 1) * parseInt(limit))
+      .limit(limit)
+      .populate(populate),
+    totalCount: await Model.countDocuments(query),
+  };
+  return items;
 };

@@ -1,7 +1,13 @@
+const {
+  retrieveUserById,
+  retrieveUsers,
+  isNotDuplicateUser,
+} = require("../controller/user.controller");
+
 const router = require("express").Router();
-const { schemaValidator } = require("../middleware/schema.validator");
-const { modifyUser, retrieveUsers } = require("../controller/user.controller");
 
 router.get("/", retrieveUsers);
+router.get("/:id", retrieveUserById);
+router.post("/check_duplicate", isNotDuplicateUser);
 
 module.exports = router;
