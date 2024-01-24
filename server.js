@@ -15,7 +15,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
   cors({
     // origin: process.env.CLIENT,
-    // credentials: true,
+    credentials: true,
   })
 );
 require("./config/db")();
