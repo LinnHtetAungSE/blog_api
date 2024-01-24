@@ -12,12 +12,7 @@ const app = express();
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(
-  cors({
-    origin: "http://localhost:3000/",
-    credentials: true,
-  })
-);
+app.use(cors());
 require("./config/db")();
 app.use("/api/v1", checkToken, router);
 app.use(errorHandler.handler);
