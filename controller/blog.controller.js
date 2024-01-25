@@ -24,7 +24,7 @@ const retrieveBlogs = async (req, res, next) => {
       categoryName,
       status
     );
-    return retrieved(res, "Blog retrieved successful", { blogs: blogs });
+    return retrieved(res, "Blog retrieved successful", { items: blogs });
   } catch (error) {
     next(error);
   }

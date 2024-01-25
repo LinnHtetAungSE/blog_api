@@ -34,7 +34,7 @@ const getUsers = async (
     criteria = addConditionToCriteria(
       criteria,
       "username",
-      username ? { $eq: username } : null
+      username ? { $regex: new RegExp(`.*${username}.*`, "i") } : null
     );
 
     criteria = addConditionToCriteria(
@@ -73,7 +73,16 @@ const getUsers = async (
       limit,
       sortBy,
       order,
-      "",
+      [
+        {
+          path: "creator",
+          select: "username email description",
+        },
+        {
+          path: "updater",
+          select: "username email description",
+        },
+      ],
       criteria
     );
     return users;

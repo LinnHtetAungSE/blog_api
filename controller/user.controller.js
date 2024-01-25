@@ -45,7 +45,7 @@ const retrieveUsers = async (req, res, next) => {
       status,
       description
     );
-    return retrieved(res, "Retrieved users successful", { users: users });
+    return retrieved(res, "Retrieved users successful", { items: users });
   } catch (error) {
     next(error);
   }

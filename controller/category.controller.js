@@ -3,14 +3,22 @@ const {
   updateCategory,
   getCategories,
   deleteCategory,
+  checkDuplicateCategory,
 } = require("../services/category.service");
-const { created, updated, retrieved, deleted } = require("./base.controller");
+const {
+  created,
+  updated,
+  retrieved,
+  deleted,
+  ok,
+} = require("./base.controller");
 
 const retrieveCategories = async (req, res, next) => {
   try {
-    const categories = await getCategories();
+    const { skip, limit, sortBy, order, name } = req.query;
+    const categories = await getCategories(skip, limit, sortBy, order, name);
     return retrieved(res, "Retrieved categories successful", {
-      categories: categories,
+      items: categories,
     });
   } catch (error) {
     next(error);
@@ -48,9 +56,23 @@ const modifyCategory = async (req, res, next) => {
 
 const removeCategory = async (req, res, next) => {
   try {
-    const deletedCategory = await deleteCategory(req.params.id);
+    const deletedCategory = await deleteCategory(
+      req.params.id,
+      req.body.usertoken.user._id
+    );
     return deleted(res, "Category deleted successful", {
       id: deletedCategory._id,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const isNotDuplicateCategory = async (req, res, next) => {
+  try {
+    const category = await checkDuplicateCategory(req.body.data.value);
+    return ok(res, "Check duplicate done", {
+      isNotExit: (!category && true) || false,
     });
   } catch (error) {
     next(error);
@@ -62,4 +84,5 @@ module.exports = {
   modifyCategory,
   retrieveCategories,
   removeCategory,
+  isNotDuplicateCategory,
 };

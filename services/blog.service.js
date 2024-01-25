@@ -63,6 +63,10 @@ const getBlogs = async (
           path: "creator",
           select: "username email description",
         },
+        {
+          path: "updater",
+          select: "username email description",
+        },
       ],
       criteria
     );
@@ -77,8 +81,10 @@ const getBlogById = async (id) => {
   try {
     await checkId(id, Blog, `Blog with id ${id} not found`);
     const blog = await Blog.findById(id).populate("categoryList");
+    console.log("BLOG", blog);
     return blog;
   } catch (error) {
+    console.log("ERROR", error);
     if (error instanceof CastError && error.path === "_id") {
       throw invalidIdError("INVALID_ID");
     }

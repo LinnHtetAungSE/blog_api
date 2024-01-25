@@ -7,12 +7,41 @@ const {
 } = require("../errors/db.error");
 const Category = require("../models/category.model");
 const { CastError } = require("mongoose");
-const { getObjectId, checkId } = require("./base.service");
+const {
+  getObjectId,
+  checkId,
+  getPaginatedItems,
+  addConditionToCriteria,
+} = require("./base.service");
 const User = require("../models/user.model");
 
-const getCategories = async () => {
+const getCategories = async (skip, limit, sortBy, order, name) => {
   try {
-    const categories = await Category.find({ isDeleted: false });
+    let criteria = {};
+
+    criteria = addConditionToCriteria(
+      criteria,
+      "name",
+      name ? { $regex: new RegExp(`.*${name}.*`, "i") } : null
+    );
+    const categories = await getPaginatedItems(
+      Category,
+      skip,
+      limit,
+      sortBy,
+      order,
+      [
+        {
+          path: "creator",
+          select: "username email description",
+        },
+        {
+          path: "updater",
+          select: "username email description",
+        },
+      ],
+      criteria
+    );
     return categories;
   } catch (error) {
     throw unprocessableError("Failed to retrieve categories");
@@ -97,11 +126,18 @@ const updateCategory = async (id, updaterId, inputCategory) => {
   }
 };
 
-const deleteCategory = async (id) => {
+const deleteCategory = async (id, updaterId) => {
   try {
-    await checkId(id, Category, `Category with id ${id} doesn't exit`);
-    const deletedCategory = await Category.findByIdAndDelete(id);
-    return deletedCategory;
+    await checkId(id, Category, `Category with id ${id} not found`);
+    const savedCategory = await Category.findByIdAndUpdate(
+      id,
+      {
+        isDeleted: "true",
+        updater: await getObjectId(updaterId),
+      },
+      { new: true }
+    );
+    return savedCategory;
   } catch (error) {
     console.log("ERROR", error);
     if (error.name === "ValidationError") {
@@ -119,10 +155,22 @@ const deleteCategory = async (id) => {
   }
 };
 
+const checkDuplicateCategory = async (value) => {
+  try {
+    const category = await Category.findOne({
+      $or: [{ name: value }],
+    });
+    return category;
+  } catch (error) {
+    throw unprocessableError("Failed check category duplicate");
+  }
+};
+
 module.exports = {
   getCategories,
   getCategoryByNames,
   createCategory,
   updateCategory,
   deleteCategory,
+  checkDuplicateCategory,
 };
